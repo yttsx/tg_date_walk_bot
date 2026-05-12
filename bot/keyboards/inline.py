@@ -178,8 +178,23 @@ def confirm_leave_group_keyboard(group_id: int) -> InlineKeyboardMarkup:
 def route_notification_keyboard(route_id: int, creator_id: int = 0) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="✅ Пройден", callback_data=f"route_done:{route_id}"),
+            InlineKeyboardButton(text="✅ Пойти", callback_data=f"route_join:{route_id}:{creator_id}"),
             InlineKeyboardButton(text="❌ Отклонить", callback_data=f"route_decline:{route_id}:{creator_id}"),
+        ]
+    ])
+
+
+def route_accepted_keyboard(route_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Маршрут пройден", callback_data=f"route_done:{route_id}")]
+    ])
+
+
+def route_notify_rate_keyboard(route_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text=str(i), callback_data=f"notify_rate:{route_id}:{i}")
+            for i in range(1, 6)
         ]
     ])
 

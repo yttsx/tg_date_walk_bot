@@ -5,9 +5,11 @@ from aiogram.types import CallbackQuery
 from bot import api_client
 from bot.keyboards.inline import (
     main_menu,
+    route_accepted_keyboard,
     route_actions,
     route_mode_keyboard,
     route_notification_keyboard,
+    route_notify_rate_keyboard,
     scenario_keyboard,
 )
 from bot.states import CreateRoute
@@ -195,13 +197,54 @@ async def _fetch_route_and_groups(telegram_id: int, route_id: int) -> tuple[dict
 
 # ── Notification response buttons ────────────────────────────────────────────
 
+@router.callback_query(lambda c: c.data.startswith("route_join:"))
+async def route_join(call: CallbackQuery, bot: Bot):
+    parts = call.data.split(":")
+    route_id = int(parts[1])
+    creator_id = int(parts[2]) if len(parts) > 2 and parts[2] else 0
+
+    await call.message.edit_reply_markup(reply_markup=route_accepted_keyboard(route_id))
+    await call.answer("Отлично! Удачной прогулки! 🚶")
+
+    if creator_id and creator_id != call.from_user.id:
+        username = call.from_user.username
+        name = f"@{username}" if username else call.from_user.first_name
+        try:
+            await bot.send_message(
+                chat_id=creator_id,
+                text=f"🚶 {name} хочет с вами погулять!",
+            )
+        except Exception:
+            pass
+
+
 @router.callback_query(lambda c: c.data.startswith("route_done:"))
 async def route_done(call: CallbackQuery):
+    route_id = int(call.data.split(":")[1])
+    await call.message.edit_text(
+        call.message.text + "\n\n⭐ *Оцените маршрут (1–5):*",
+        parse_mode="Markdown",
+        disable_web_page_preview=True,
+        reply_markup=route_notify_rate_keyboard(route_id),
+    )
+    await call.answer()
+
+
+@router.callback_query(lambda c: c.data.startswith("notify_rate:"))
+async def notify_rate(call: CallbackQuery):
+    parts = call.data.split(":")
+    route_id, value = int(parts[1]), int(parts[2])
+
+    try:
+        await api_client.post_rating(call.from_user.id, {"route_id": route_id, "value": value})
+    except Exception:
+        pass
+
     try:
         await call.message.delete()
     except Exception:
         await call.message.edit_reply_markup(reply_markup=None)
-    await call.answer("Отлично! Маршрут пройден! ✅")
+    await call.answer(f"Маршрут оценён на {value} {'⭐' * value}. Спасибо!", show_alert=True)
 
 
 @router.callback_query(lambda c: c.data.startswith("route_decline:"))
@@ -224,7 +267,7 @@ async def route_declined(call: CallbackQuery, bot: Bot):
                 text=f"😔 К сожалению, {name} отказался идти по этому маршруту.",
             )
         except Exception:
-            pass  # creator may have blocked the bot
+            pass
 
 
 # ── History ───────────────────────────────────────────────────────────────────
