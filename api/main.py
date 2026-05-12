@@ -2,7 +2,12 @@ from fastapi import FastAPI
 
 from api.routers import auth, groups, history, places, ratings, routes
 
-app = FastAPI(title="WalkBot API", version="0.1.0")
+# VERSION MARKER: v2-no-postgis - 2026-05-12
+print("=" * 60)
+print("API STARTING: v2-no-postgis (geom column removed)")
+print("=" * 60)
+
+app = FastAPI(title="WalkBot API", version="0.2.0")
 
 app.include_router(auth.router)
 app.include_router(places.router)
