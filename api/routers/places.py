@@ -53,12 +53,11 @@ async def add_place(
         group_id=data.group_id,
         visibility=visibility,
     )
-    if lat and lon:
-        place.geom = f"SRID=4326;POINT({lon} {lat})"
     session.add(place)
     await session.commit()
     await session.refresh(place)
     return place
+
 
 
 @router.get("", response_model=list[PlaceOut])

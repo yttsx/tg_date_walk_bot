@@ -1,7 +1,5 @@
 from datetime import datetime
-from typing import Any
 
-from geoalchemy2 import Geometry
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -42,7 +40,6 @@ class Place(Base):
     address: Mapped[str] = mapped_column(String(400), nullable=False)
     lat: Mapped[float | None] = mapped_column(Float)
     lon: Mapped[float | None] = mapped_column(Float)
-    geom: Mapped[Any | None] = mapped_column(Geometry("POINT", srid=4326))
     url: Mapped[str | None] = mapped_column(String(500))
     tags: Mapped[list[str]] = mapped_column(JSONB, default=list)
     city: Mapped[str] = mapped_column(String(64), default="moscow")
