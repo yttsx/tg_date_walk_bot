@@ -134,6 +134,17 @@ async def accept_group_invite(telegram_id: int, group_id: int) -> dict:
             return await r.json()
 
 
+async def join_group_by_link(telegram_id: int, group_id: int) -> dict:
+    """Join group directly via invite link."""
+    async with aiohttp.ClientSession() as s:
+        async with s.post(
+            f"{settings.API_BASE_URL}/groups/{group_id}/join",
+            headers=_headers(telegram_id),
+        ) as r:
+            r.raise_for_status()
+            return await r.json()
+
+
 async def my_groups(telegram_id: int) -> dict:
     async with aiohttp.ClientSession() as s:
         async with s.get(

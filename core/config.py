@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     BOT_TOKEN: str
+    BOT_USERNAME: str = ""  # @username бота без @ — для генерации ссылок-приглашений
     API_BASE_URL: str = "http://api:8000"
 
     DATABASE_URL: str

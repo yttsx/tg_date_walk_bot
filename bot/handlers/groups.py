@@ -13,6 +13,7 @@ from bot.keyboards.inline import (
     main_menu,
 )
 from bot.states import CreateGroup, InviteToGroup
+from core.config import settings
 
 router = Router()
 
@@ -229,3 +230,34 @@ async def accept_invite(call: CallbackQuery):
 @router.callback_query(lambda c: c.data == "decline_invite")
 async def decline_invite(call: CallbackQuery):
     await call.message.edit_text("Приглашение отклонено.", reply_markup=main_menu())
+
+
+# ── Share invite link ─────────────────────────────────────────────────────────
+
+@router.callback_query(lambda c: c.data.startswith("share_group:"))
+async def share_group(call: CallbackQuery, state: FSMContext):
+    group_id = int(call.data.split(":")[1])
+
+    bot_username = settings.BOT_USERNAME.lstrip("@") if settings.BOT_USERNAME else None
+    if not bot_username:
+        await call.answer(
+            "Ссылки временно недоступны (не настроен BOT_USERNAME).",
+            show_alert=True,
+        )
+        return
+
+    invite_link = f"https://t.me/{bot_username}?start=join_{group_id}"
+
+    text = (
+        "🔗 *Ссылка для приглашения:*\n\n"
+        f"`{invite_link}`\n\n"
+        "Отправьте её партнёру — кто перейдёт, автоматически вступит в группу.\n\n"
+        "_Нажмите на ссылку, чтобы скопировать._"
+    )
+    await call.message.edit_text(
+        text,
+        parse_mode="Markdown",
+        reply_markup=group_detail_keyboard(group_id),
+        disable_web_page_preview=True,
+    )
+    await call.answer()

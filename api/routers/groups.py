@@ -136,6 +136,37 @@ async def accept_invite(
     return await _group_to_out(group, session)
 
 
+@router.post("/{group_id}/join", response_model=GroupOut)
+async def join_by_link(
+    group_id: int,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Join group directly via invite link (no prior invitation needed)."""
+    group = await session.get(Group, group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+
+    existing = await session.get(GroupMember, (group_id, user.id))
+    if existing:
+        if existing.status == "accepted":
+            # Already a member — return group info, not an error
+            return await _group_to_out(group, session)
+        # Was pending → accept
+        existing.status = "accepted"
+    else:
+        membership = GroupMember(
+            group_id=group_id,
+            user_id=user.id,
+            role="member",
+            status="accepted",
+        )
+        session.add(membership)
+
+    await session.commit()
+    return await _group_to_out(group, session)
+
+
 @router.get("/my", response_model=MyGroupsOut)
 async def my_groups(
     user: User = Depends(get_current_user),

@@ -147,7 +147,11 @@ def groups_list_keyboard(groups: list[dict]) -> InlineKeyboardMarkup:
             InlineKeyboardButton(
                 text=f"👥 {g['title']} ({member_count} уч.)",
                 callback_data=f"group_detail:{g['id']}",
-            )
+            ),
+            InlineKeyboardButton(
+                text="🔗",
+                callback_data=f"share_group:{g['id']}",
+            ),
         ])
     rows.append([InlineKeyboardButton(text="← Назад", callback_data="groups_menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
@@ -155,7 +159,8 @@ def groups_list_keyboard(groups: list[dict]) -> InlineKeyboardMarkup:
 
 def group_detail_keyboard(group_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="➕ Пригласить", callback_data=f"invite_to_group:{group_id}")],
+        [InlineKeyboardButton(text="➕ Пригласить по @username", callback_data=f"invite_to_group:{group_id}")],
+        [InlineKeyboardButton(text="🔗 Ссылка-приглашение", callback_data=f"share_group:{group_id}")],
         [InlineKeyboardButton(text="← К группам", callback_data="my_groups")],
     ])
 
