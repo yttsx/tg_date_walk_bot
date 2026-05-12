@@ -161,7 +161,17 @@ def group_detail_keyboard(group_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="➕ Пригласить по @username", callback_data=f"invite_to_group:{group_id}")],
         [InlineKeyboardButton(text="🔗 Ссылка-приглашение", callback_data=f"share_group:{group_id}")],
+        [InlineKeyboardButton(text="🚪 Выйти из группы", callback_data=f"leave_group:{group_id}")],
         [InlineKeyboardButton(text="← К группам", callback_data="my_groups")],
+    ])
+
+
+def confirm_leave_group_keyboard(group_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Да, выйти", callback_data=f"confirm_leave:{group_id}"),
+            InlineKeyboardButton(text="❌ Отмена", callback_data=f"group_detail:{group_id}"),
+        ]
     ])
 
 

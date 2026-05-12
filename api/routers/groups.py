@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_user
@@ -165,6 +165,48 @@ async def join_by_link(
 
     await session.commit()
     return await _group_to_out(group, session)
+
+
+@router.delete("/{group_id}/leave", status_code=204)
+async def leave_group(
+    group_id: int,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Leave a group. If owner is the last accepted member, the group is deleted."""
+    membership = await session.get(GroupMember, (group_id, user.id))
+    if not membership:
+        raise HTTPException(status_code=404, detail="You are not in this group")
+
+    # Find other accepted members
+    others_result = await session.execute(
+        select(GroupMember).where(
+            GroupMember.group_id == group_id,
+            GroupMember.user_id != user.id,
+            GroupMember.status == "accepted",
+        )
+    )
+    other_accepted = others_result.scalars().all()
+
+    if membership.role == "owner" and other_accepted:
+        # Transfer ownership to the first other accepted member
+        new_owner = other_accepted[0]
+        new_owner.role = "owner"
+
+    # Remove this membership
+    await session.delete(membership)
+
+    # If no accepted members left — delete the group entirely
+    if not other_accepted:
+        # Drop any remaining pending members first
+        await session.execute(
+            delete(GroupMember).where(GroupMember.group_id == group_id)
+        )
+        group = await session.get(Group, group_id)
+        if group:
+            await session.delete(group)
+
+    await session.commit()
 
 
 @router.get("/my", response_model=MyGroupsOut)

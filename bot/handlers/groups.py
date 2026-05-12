@@ -7,6 +7,7 @@ from bot import api_client
 from bot.keyboards.inline import (
     accept_invite_keyboard,
     cancel_keyboard,
+    confirm_leave_group_keyboard,
     group_detail_keyboard,
     groups_list_keyboard,
     groups_menu_keyboard,
@@ -230,6 +231,35 @@ async def accept_invite(call: CallbackQuery):
 @router.callback_query(lambda c: c.data == "decline_invite")
 async def decline_invite(call: CallbackQuery):
     await call.message.edit_text("Приглашение отклонено.", reply_markup=main_menu())
+
+
+# ── Leave group ───────────────────────────────────────────────────────────────
+
+@router.callback_query(lambda c: c.data.startswith("leave_group:"))
+async def confirm_leave_group(call: CallbackQuery):
+    group_id = int(call.data.split(":")[1])
+    await call.message.edit_text(
+        "Вы уверены, что хотите выйти из группы?\n\n"
+        "Если вы единственный участник — группа будет удалена. "
+        "Если вы владелец — права передадутся другому участнику.",
+        reply_markup=confirm_leave_group_keyboard(group_id),
+    )
+
+
+@router.callback_query(lambda c: c.data.startswith("confirm_leave:"))
+async def do_leave_group(call: CallbackQuery):
+    group_id = int(call.data.split(":")[1])
+    try:
+        await api_client.leave_group(call.from_user.id, group_id)
+    except Exception as e:
+        await call.message.edit_text(f"Ошибка: {e}", reply_markup=main_menu())
+        return
+
+    await call.message.edit_text(
+        "✅ Вы вышли из группы.",
+        reply_markup=main_menu(),
+    )
+    await call.answer()
 
 
 # ── Share invite link ─────────────────────────────────────────────────────────
