@@ -221,13 +221,8 @@ async def route_join(call: CallbackQuery, bot: Bot):
 @router.callback_query(lambda c: c.data.startswith("route_done:"))
 async def route_done(call: CallbackQuery):
     route_id = int(call.data.split(":")[1])
-    await call.message.edit_text(
-        call.message.text + "\n\n⭐ *Оцените маршрут (1–5):*",
-        parse_mode="Markdown",
-        disable_web_page_preview=True,
-        reply_markup=route_notify_rate_keyboard(route_id),
-    )
-    await call.answer()
+    await call.message.edit_reply_markup(reply_markup=route_notify_rate_keyboard(route_id))
+    await call.answer("Оцените маршрут! ⭐")
 
 
 @router.callback_query(lambda c: c.data.startswith("notify_rate:"))
