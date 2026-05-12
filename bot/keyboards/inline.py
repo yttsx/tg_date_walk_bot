@@ -149,7 +149,7 @@ def groups_list_keyboard(groups: list[dict]) -> InlineKeyboardMarkup:
                 callback_data=f"group_detail:{g['id']}",
             ),
             InlineKeyboardButton(
-                text="🔗",
+                text="📤",
                 callback_data=f"share_group:{g['id']}",
             ),
         ])
@@ -175,11 +175,11 @@ def confirm_leave_group_keyboard(group_id: int) -> InlineKeyboardMarkup:
     ])
 
 
-def route_notification_keyboard(route_id: int) -> InlineKeyboardMarkup:
+def route_notification_keyboard(route_id: int, creator_id: int = 0) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="✅ Пройден", callback_data=f"route_done:{route_id}"),
-            InlineKeyboardButton(text="❌ Отклонить", callback_data=f"route_decline:{route_id}"),
+            InlineKeyboardButton(text="❌ Отклонить", callback_data=f"route_decline:{route_id}:{creator_id}"),
         ]
     ])
 

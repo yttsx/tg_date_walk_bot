@@ -135,13 +135,11 @@ async def notify_group(call: CallbackQuery, bot: Bot):
     route_id = int(route_id_str)
     group_id = int(group_id_str)
 
-    await call.answer()  # dismiss loading spinner immediately
-
     # Fetch route and group members in parallel
     try:
         route, groups_data = await _fetch_route_and_groups(call.from_user.id, route_id)
     except Exception as e:
-        await call.message.reply(f"Ошибка: {e}")
+        await call.answer(f"Ошибка: {e}", show_alert=True)
         return
 
     # Find the group and collect recipients
@@ -158,7 +156,7 @@ async def notify_group(call: CallbackQuery, bot: Bot):
             break
 
     if not recipients:
-        await call.message.reply("Нет участников для уведомления.")
+        await call.answer("Нет участников для уведомления.", show_alert=True)
         return
 
     sender_name = call.from_user.username or call.from_user.first_name
@@ -172,18 +170,18 @@ async def notify_group(call: CallbackQuery, bot: Bot):
                 text=text,
                 parse_mode="Markdown",
                 disable_web_page_preview=True,
-                reply_markup=route_notification_keyboard(route_id),
+                reply_markup=route_notification_keyboard(route_id, call.from_user.id),
             )
             sent += 1
         except Exception:
             pass  # member may have blocked the bot
 
-    await call.message.reply(
-        f"✅ Маршрут отправлен {sent} из {len(recipients)} участников."
-        if sent < len(recipients)
-        else f"✅ Маршрут отправлен всем {sent} участникам группы *{group_title}*.",
-        parse_mode="Markdown",
+    result = (
+        f"✅ Маршрут отправлен всем {sent} участникам группы {group_title}."
+        if sent == len(recipients)
+        else f"✅ Отправлено {sent} из {len(recipients)} участников."
     )
+    await call.answer(result, show_alert=True)
 
 
 async def _fetch_route_and_groups(telegram_id: int, route_id: int) -> tuple[dict, dict]:
@@ -199,18 +197,34 @@ async def _fetch_route_and_groups(telegram_id: int, route_id: int) -> tuple[dict
 
 @router.callback_query(lambda c: c.data.startswith("route_done:"))
 async def route_done(call: CallbackQuery):
-    await call.message.edit_text(
-        call.message.text + "\n\n✅ *Маршрут пройден!*",
-        parse_mode="Markdown",
-        disable_web_page_preview=True,
-    )
-    await call.answer("Отлично!")
+    try:
+        await call.message.delete()
+    except Exception:
+        await call.message.edit_reply_markup(reply_markup=None)
+    await call.answer("Отлично! Маршрут пройден! ✅")
 
 
 @router.callback_query(lambda c: c.data.startswith("route_decline:"))
-async def route_declined(call: CallbackQuery):
-    await call.message.edit_reply_markup(reply_markup=None)
+async def route_declined(call: CallbackQuery, bot: Bot):
+    parts = call.data.split(":")
+    creator_id = int(parts[2]) if len(parts) > 2 and parts[2] else 0
+
+    try:
+        await call.message.delete()
+    except Exception:
+        await call.message.edit_reply_markup(reply_markup=None)
     await call.answer("Маршрут отклонён")
+
+    if creator_id and creator_id != call.from_user.id:
+        username = call.from_user.username
+        name = f"@{username}" if username else call.from_user.first_name
+        try:
+            await bot.send_message(
+                chat_id=creator_id,
+                text=f"😔 К сожалению, {name} отказался идти по этому маршруту.",
+            )
+        except Exception:
+            pass  # creator may have blocked the bot
 
 
 # ── History ───────────────────────────────────────────────────────────────────
